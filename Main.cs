@@ -1,168 +1,102 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using TrackedRiderUtility;
 
 public class Main : IMod
 {
     public string Identifier { get; set; }
 	public static AssetBundleManager AssetBundleManager = null;
     public static Configuration Configeration = null;
-    public static string HASH = "asdfawujeba8whe9jnimpiasnd";
 
-    private List<UnityEngine.Object> registeredObjects = new List<UnityEngine.Object>();
 
-    GameObject hider;
+    private TrackRiderBinder binder;
+
     public void onEnabled()
     {
-        hider = new GameObject ();
-
-		if (Main.AssetBundleManager == null) {
+        if (Main.AssetBundleManager == null) {
 
 			AssetBundleManager = new AssetBundleManager (this);
 		}
 
-        TrackedRide selected = null;
-        foreach (Attraction t in AssetManager.Instance.getAttractionObjects ()) {
-            if (t.getUnlocalizedName() == "Ghost Mansion Ride") {
-                selected = (TrackedRide)t;
-                break;
-                    
-            }
-        }
-
-        TrackedRide trackRider = UnityEngine.Object.Instantiate (selected);
-
-        trackRider.canChangeCarRotation = false;
-        trackRider.meshGenerator = selected.meshGenerator;// ScriptableObject.CreateInstance<MinetrainTrackGenerator> ();
-        trackRider.meshGenerator.stationPlatformGO = selected.meshGenerator.stationPlatformGO;
-        trackRider.meshGenerator.material = selected.meshGenerator.material;
-        trackRider.meshGenerator.liftMaterial = selected.meshGenerator.liftMaterial;
-        trackRider.meshGenerator.frictionWheelsGO = selected.meshGenerator.frictionWheelsGO;
-        trackRider.meshGenerator.supportInstantiator =selected.meshGenerator.supportInstantiator;
-        trackRider.meshGenerator.crossBeamGO = selected.meshGenerator.crossBeamGO;
-        trackRider.targetVelocity = 7f;
-        trackRider.maximumVelocity = 7f;
-
-        Color[] colors = new Color[] { new Color(63f / 255f, 46f / 255f, 37f / 255f, 1), new Color(43f / 255f, 35f / 255f, 35f / 255f, 1), new Color(90f / 255f, 90f / 255f, 90f / 255f, 1) };
-        trackRider.meshGenerator.customColors = colors;
-        trackRider.meshGenerator.customColors = colors;
-        trackRider.setDisplayName("Car Ride");
-        trackRider.price = 1200;
-        trackRider.name = "car_ride_coaster_GO" + HASH ;
-        AssetManager.Instance.registerObject (trackRider);
-        registeredObjects.Add (trackRider);
+        binder = new TrackRiderBinder ("509e93b5d3723a5a215e5c67500c2e28");
 
 
-        List<CoasterCarInstantiator> trains = new List<CoasterCarInstantiator> ();
+        TrackedRide trackedRide = binder.RegisterTrackedRide<TrackedRide> ("Ghost Mansion Ride","CarRide", "Car Ride");
+        trackedRide.price = 1200;
+        trackedRide.carTypes = new CoasterCarInstantiator[]{ };
+
+        TrackedRide ghostRide = TrackRideHelper.GetTrackedRide ("Ghost Mansion Ride");
+        GhostMansionRideMeshGenerator meshGenerator = binder.RegisterMeshGenerator<GhostMansionRideMeshGenerator> (trackedRide);
+        TrackRideHelper.PassMeshGeneratorProperties (ghostRide.meshGenerator,trackedRide.meshGenerator);
+        meshGenerator.tubeMaterial = ((GhostMansionRideMeshGenerator)ghostRide.meshGenerator).tubeMaterial;
+
+        trackedRide.maxBankingAngle = 7;
+        trackedRide.targetVelocity = 7;
+        trackedRide.meshGenerator.customColors = new Color[] 
+        { 
+            new Color(63f / 255f, 46f / 255f, 37f / 255f, 1), 
+            new Color(43f / 255f, 35f / 255f, 35f / 255f, 1), 
+            new Color(90f / 255f, 90f / 255f, 90f / 255f, 1) 
+        };
+        trackedRide.canChangeCarRotation = false;
+     
+        CoasterCarInstantiator mouseCarInstaniator = binder.RegisterCoasterCarInstaniator<CoasterCarInstantiator>(trackedRide, "MouseCarInstaniator", "Mouse Car", 1, 1, 1);
+        BaseCar mouseCar = binder.RegisterCar<BaseCar>( Main.AssetBundleManager.MouseCarGo,"MouseCar",.3f,.1f,true,
+            new Color[] { 
+                new Color(71f / 255, 71f / 255, 71f / 255), 
+                new Color(176f / 255, 7f / 255, 7f / 255), 
+                new Color(26f / 255, 26f / 255, 26f / 255),
+                new Color(31f / 255, 31f / 255, 31f / 255)}
+        );
+        mouseCar.gameObject.AddComponent<RestraintRotationController>().closedAngles = new Vector3(0,0,120);
+        mouseCarInstaniator.carGO = mouseCar.gameObject;
+
+
+        CoasterCarInstantiator TruckCarInstaniator = binder.RegisterCoasterCarInstaniator<CoasterCarInstantiator> (trackedRide, "TruckCarInstaniator", "Truck Car", 1, 1, 1);
+        BaseCar truckCar = binder.RegisterCar<BaseCar>( Main.AssetBundleManager.TruckGo,"TruckCar", .3f,.35f,true,
+            new Color[] { 
+                new Color(68f / 255, 58f / 255, 50f / 255), 
+                new Color(176f / 255, 7f / 255, 7f / 255), 
+                new Color(55f / 255, 32f / 255, 12f / 255),
+                new Color(61f / 255, 40f / 255, 19f / 255)}
+
+        );
+        truckCar.gameObject.AddComponent<RestraintRotationController>().closedAngles = new Vector3(0,0,120);
+        TruckCarInstaniator.carGO = truckCar.gameObject;
+
+        CoasterCarInstantiator sportsCarInstaniator = binder.RegisterCoasterCarInstaniator<CoasterCarInstantiator> (trackedRide, "SportsCarInstaniator", "Sports Car", 1, 1, 1);
+        BaseCar sportsCar = binder.RegisterCar<BaseCar>( Main.AssetBundleManager.SportsCarGo,"SportsCar", .3f,.35f,true,
+            new Color[] { 
+                new Color(.949f, .141f, .145f), 
+                new Color(.925f, .937f, .231f), 
+                new Color(.754f, .754f, .754f),
+                new Color(.788f,.788f, .788f)}
+        );
+        sportsCar.gameObject.AddComponent<RestraintRotationController>().closedAngles = new Vector3(0,0,120);
+        sportsCarInstaniator.carGO = sportsCar.gameObject;
+
+        binder.Apply ();
+
+        //deprecatedMappings
+        string oldHash = "asdfawujeba8whe9jnimpiasnd";
+        GameObjectHelper.RegisterDeprecatedMapping ("car_ride_coaster_GO" + oldHash , trackedRide.name);
+
+        GameObjectHelper.RegisterDeprecatedMapping ("Mouse_Car@CoasterCarInstantiator" +oldHash, mouseCarInstaniator.name);
+        GameObjectHelper.RegisterDeprecatedMapping ("Truck_Car@CoasterCarInstantiator" +oldHash, TruckCarInstaniator.name);
+        GameObjectHelper.RegisterDeprecatedMapping ("Sports_Car@CoasterCarInstantiator" +oldHash, sportsCarInstaniator.name);
+      
+        GameObjectHelper.RegisterDeprecatedMapping ( "Mouse_Car_Front" + oldHash, mouseCar.name);
+        GameObjectHelper.RegisterDeprecatedMapping ("Truck_Car_Front"+ oldHash, truckCar.name);
+        GameObjectHelper.RegisterDeprecatedMapping ("Sports_Car_Front"+ oldHash, sportsCar.name);
+
        
-
-        trains.Add (this.AddCar(
-            Main.AssetBundleManager.MouseCarGo,
-            "Mouse Car",
-            "Mouse_Car",
-            new Color[] { new Color(71f / 255, 71f / 255, 71f / 255), new Color(176f / 255, 7f / 255, 7f / 255), new Color(26f / 255, 26f / 255, 26f / 255),new Color(31f / 255, 31f / 255, 31f / 255)},
-            .3f,.1f));
-
-        trains.Add (this.AddCar(
-            Main.AssetBundleManager.TruckGo,
-            "Truck",
-            "Truck_Car",
-            new Color[] { new Color(68f / 255, 58f / 255, 50f / 255), new Color(176f / 255, 7f / 255, 7f / 255), new Color(55f / 255, 32f / 255, 12f / 255),new Color(61f / 255, 40f / 255, 19f / 255)},
-            .3f,.35f));
-
-        trains.Add (this.AddCar(
-            Main.AssetBundleManager.SportsCarGo,
-            "Sports Car",
-            "Sports_Car",
-            new Color[] { new Color(.949f, .141f, .145f), new Color(.925f, .937f, .231f), new Color(.754f, .754f, .754f),new Color(.788f,.788f, .788f)},
-            .3f,.35f));
-        
-
-        trackRider.carTypes = trains.ToArray();
-
-        hider.SetActive (false);
 
 	}
 
-    private CoasterCarInstantiator AddCar(GameObject model,string display,string name,Color[] colors,float frontOffset, float backOffset)
-    {
-        //get car
-        GameObject frontcarGo = UnityEngine.GameObject.Instantiate(model);
-        Rigidbody frontcarRigid = frontcarGo.AddComponent<Rigidbody> ();
-        frontcarRigid.isKinematic = true;
-        frontcarGo.AddComponent<BoxCollider> ();
-
-        //add Component
-        CarCar frontCar = frontcarGo.AddComponent<CarCar> ();
-        MakeRecolorble(frontcarGo, "CustomColorsDiffuse", colors);
-        frontCar.name = name + "_Front" + HASH;
-
-        frontCar.offsetFront = frontOffset;
-        frontCar.offsetBack = backOffset;
-
-        frontCar.Decorate (true);
-
-        CoasterCarInstantiator coasterCarInstantiator = ScriptableObject.CreateInstance<CoasterCarInstantiator> ();
-
-        coasterCarInstantiator.name = name+"@CoasterCarInstantiator" + HASH;
-        coasterCarInstantiator.defaultTrainLength = 1;
-        coasterCarInstantiator.maxTrainLength = 1;
-        coasterCarInstantiator.minTrainLength = 1;
-        coasterCarInstantiator.frontCarGO = frontcarGo;
-        coasterCarInstantiator.displayName = display;
-
-
-        //Restraints
-        RestraintRotationController controllerFront = frontcarGo.AddComponent<RestraintRotationController>();
-        controllerFront.closedAngles = new Vector3(0, 0, 120);
-        frontcarGo.transform.parent = hider.transform;
-
-        AssetManager.Instance.registerObject (coasterCarInstantiator);
-        registeredObjects.Add (coasterCarInstantiator);
-
-
-        //register cars
-        AssetManager.Instance.registerObject (frontCar);
-        registeredObjects.Add (frontCar);
-
-        return coasterCarInstantiator;
-
-    }
-
-    private void MakeRecolorble(GameObject GO, string shader, Color[] colors)
-    {
-        CustomColors cc = GO.AddComponent<CustomColors>();
-        cc.setColors(colors);
-
-        foreach (Material material in AssetManager.Instance.objectMaterials)
-        {
-            if (material.name == shader)
-            {
-                SetMaterial(GO, material);
-                break;
-            }
-        }
-
-    }
-
-    private void SetMaterial(GameObject go, Material material)
-    {
-        // Go through all child objects and recolor     
-        Renderer[] renderCollection;
-        renderCollection = go.GetComponentsInChildren<Renderer>();
-
-        foreach (Renderer render in renderCollection)
-        {
-            render.sharedMaterial = material;
-        }
-    }
 
     public void onDisabled()
     {
-        foreach(UnityEngine.Object o in registeredObjects)
-        {
-            AssetManager.Instance.unregisterObject (o);
-        }
-        UnityEngine.GameObject.DestroyImmediate (hider);
+        binder.Unload ();
 	}
 
     public string Name
